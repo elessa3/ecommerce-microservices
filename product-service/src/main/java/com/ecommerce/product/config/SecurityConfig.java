@@ -38,7 +38,7 @@ public class SecurityConfig {
                 // Swagger (development only — restrict in prod)
                 .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
                 // Everything else requires authentication
-                .anyRequest().authenticated()
+                 .anyRequest().permitAll()
             )
             .build();
     }

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; }
+        .header { background-color: #7a1f1f; color: #ffffff; padding: 24px; text-align: center; }
+        .header h1 { margin: 0; font-size: 20px; }
+        .body { padding: 24px; color: #333333; }
+        .order-number { font-size: 18px; font-weight: bold; color: #7a1f1f; }
+        .footer { padding: 16px 24px; font-size: 12px; color: #999999; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>Order Cancelled</h1></div>
+        <div class="body">
+            <p class="order-number">Order <span th:text="${orderNumber}">ORD-2026-00001</span> has been cancelled.</p>
+            <p>Reason: <span th:text="${reason}">Customer request</span></p>
+            <p>If you have any questions, please contact our support team.</p>
+        </div>
+        <div class="footer">This is an automated message from the Ecommerce Microservices demo project.</div>
+    </div>
+</body>
+</html>

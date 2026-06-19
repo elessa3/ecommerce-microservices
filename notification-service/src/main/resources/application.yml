@@ -1,0 +1,64 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: notification-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/notification_db
+    username: ${DB_USER:ecommerce}
+    password: ${DB_PASSWORD:ecommerce}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  # ── Kafka Consumer ────────────────────────────────────────────────
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
+    consumer:
+      group-id: notification-service
+      auto-offset-reset: earliest          # process events published before this service started
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.ecommerce.order.event,com.ecommerce.notification.event"
+        spring.json.use.type.headers: false
+        # enable.auto.commit=false would require manual ack — using simpler auto-commit for this project
+    listener:
+      ack-mode: record                     # commit offset after each record is successfully processed
+
+  # ── Email (Mailtrap recommended for local dev — see README) ──────
+  mail:
+    host: ${MAIL_HOST:sandbox.smtp.mailtrap.io}
+    port: ${MAIL_PORT:2525}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  health:
+    kafka:
+      enabled: true
+
+app:
+  kafka:
+    topic:
+      order-events: order-events
+  mail:
+    from: noreply@ecommerce-demo.com
