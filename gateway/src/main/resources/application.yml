@@ -1,0 +1,76 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
+
+  cloud:
+    gateway:
+      # CORS — allows the React frontend (running on a different port) to call the gateway
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "${FRONTEND_URL:http://localhost:3000}"
+            allowedMethods: [GET, POST, PUT, DELETE, OPTIONS]
+            allowedHeaders: "*"
+            allowCredentials: true
+
+      routes:
+        # ── Product Service ──────────────────────────────────────────
+        - id: product-service
+          uri: ${PRODUCT_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/products/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 20    # tokens added per second
+                redis-rate-limiter.burstCapacity: 40     # max tokens in the bucket
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@ipKeyResolver}"
+
+        # ── Order Service ────────────────────────────────────────────
+        - id: order-service
+          uri: ${ORDER_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/orders/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@ipKeyResolver}"
+
+        # Stripe webhooks bypass rate limiting — Stripe controls its own retry behavior,
+        # and we never want to accidentally drop a payment confirmation
+        - id: order-service-webhooks
+          uri: ${ORDER_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/webhooks/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  health:
+    redis:
+      enabled: true
+
+app:
+  jwt:
+    # In production this MUST come from a secrets manager (AWS Secrets Manager,
+    # HashiCorp Vault, etc.) — never hardcoded. This default is for local dev only.
+    secret: ${JWT_SECRET:dev-only-secret-key-change-in-production-minimum-256-bits-long}
+  public-paths:
+    - /api/v1/products
+    - /api/v1/webhooks
+    - /actuator/health
+    - /dev/token
